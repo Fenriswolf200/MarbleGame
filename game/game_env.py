@@ -1,29 +1,19 @@
 import pygame 
-from enum import Enum
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-import random
 from gymnasium.envs.registration import register
 from game_agent import BlackjackAgent
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
 
-# Make function to terminate when no moves remain
 # add action masking 
+# - make a function to obtain allowed moves and return a list of those allowed moves
+# - modify action space to only come from that list of allowed moves 
+# - Make function to terminate when no moves remain
+#
 
-"""
-[
-    [2, 2, 1, 1, 1, 2, 2]
-    [2, 2, 1, 1, 1, 2, 2]
-    [1, 1, 1, 1, 1, 1, 1]
-    [1, 1, 1, 0, 1, 1, 1]
-    [1, 1, 1, 1, 1, 1, 1]
-    [2, 2, 1, 1, 1, 2, 2]
-    [2, 2, 1, 1, 1, 2, 2]
-]
-"""
 
 register(
     id="MarbleGameEnv",
@@ -133,8 +123,6 @@ class MarbleGameEnv(gym.Env):
 
     def step(self, step_input):
 
-        direction = int(step_input[2])
-        selected_marble = np.array([step_input[0], step_input[1]])
 
         """
         MARBLE GAME STEP FUNCTION
@@ -144,12 +132,19 @@ class MarbleGameEnv(gym.Env):
             if it is +1 points if it isn't -0.1 points
         4. Update Board and current position
         5. Check to see if only one piece remains in the board np.sum and terminate if so,
-        
+        6. Screen is rendered 
         """
 
 
+
+
+
+        direction = int(step_input[2])
+        selected_marble = np.array([step_input[0], step_input[1]])
+
+
+
         
-        self.render()
 
 
         new_position = np.add(selected_marble, self.movement_vectors[direction])
@@ -177,6 +172,7 @@ class MarbleGameEnv(gym.Env):
         
 
 
+        self.render()
 
 
         return observation, reward, terminated, False, info
