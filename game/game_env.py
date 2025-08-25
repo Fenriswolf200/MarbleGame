@@ -189,8 +189,23 @@ class MarbleGameEnv(gym.Env):
 
 
     def get_valid_moves(self):
-        valid_moves = []
         
+        empty_tiles = np.where(self.board == 0)
+        valid_moves = []
+
+        for i in range(len(empty_tiles[0])):
+            y = empty_tiles[0][i]
+            x = empty_tiles[1][i]
+            
+            for direction_index in self.movement_vectors:
+                selected_marble = np.array([y,x])
+                new_position = np.add(selected_marble, self.movement_vectors[direction_index])
+                midpoint = np.add(selected_marble, (self.movement_vectors[direction_index]//2).astype(int))
+                if self.check_movement_validity(selected_marble, new_position, midpoint):
+                    valid_moves.append((y,x,direction_index))
+        
+        """
+        valid_moves = []
         for y in range(self.size):
             for x in range(self.size):
                 for direction_index in self.movement_vectors:
@@ -199,6 +214,7 @@ class MarbleGameEnv(gym.Env):
                     midpoint = np.add(selected_marble, (self.movement_vectors[direction_index]//2).astype(int))
                     if self.check_movement_validity(selected_marble, new_position, midpoint):
                         valid_moves.append((y,x,direction_index))
+        """
         return valid_moves
     
     def action_to_index(self, action):
@@ -394,7 +410,6 @@ if __name__=="__main__":
 
 
 
-    """
 
     # CODE TO TRAIN WITHOUT RENDERING
 
@@ -440,7 +455,7 @@ if __name__=="__main__":
 
 
 
-
+    """
     env = gym.make("MarbleGameEnv", render_mode="human")
     env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
     agent = MarbleGameAgent.load("MarbleGameAgent.pkl", env)
@@ -475,8 +490,9 @@ if __name__=="__main__":
 
     
 
-    """
 
+
+    # TEST CODE
     env = gym.make("MarbleGameEnv", render_mode="human")  # headless test
     agent = MarbleGameAgent.load("MarbleGameAgent.pkl", env)
 
@@ -487,9 +503,9 @@ if __name__=="__main__":
 
 
 
+
+
     """
-
-
 
 
     def get_moving_avgs(arr, window, convolution_mode):
@@ -542,4 +558,3 @@ if __name__=="__main__":
 
 
 
-    """

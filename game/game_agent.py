@@ -61,11 +61,26 @@ class MarbleGameAgent:
 
         s = self.encode_obs(obs)
 
+
+
+
         if info is not None and "action_mask" in info:
             mask = info["action_mask"]
             valid_indices = np.where(mask == 1)[0]
+
+            # 🚨 If no valid actions, fall back to all actions
+            if len(valid_indices) == 0:
+                valid_indices = np.arange(len(self.q_values[s]))
         else:
             valid_indices = np.arange(len(self.q_values[s]))
+
+
+
+
+
+
+
+
 
 
         if np.random.random() < self.epsilon:
@@ -147,6 +162,7 @@ class MarbleGameAgent:
         successes = 0
 
         for ep in range(n_episodes):
+            print(ep)
             obs, info = env.reset()
             done = False
             total_reward = 0
