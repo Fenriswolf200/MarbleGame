@@ -19,12 +19,10 @@ class MarbleGameAgent:
     ):
         self.env = env
 
-        # MultiDiscrete([7,7,4]) -> nvec = [7,7,4]
 
         self.nvec = np.array(getattr(env.action_space, "nvec"))
         self.num_actions = int(np.prod(self.nvec))
 
-        # Q(s,a) table: state_key -> np.array([Q for each flat action])
         self.q_values = defaultdict(lambda: np.zeros(self.num_actions, dtype=np.float32))
 
         self.lr = learning_rate
@@ -36,51 +34,32 @@ class MarbleGameAgent:
 
         self.training_error = []
 
-    # ---- Helpers ----
     def encode_obs(self, obs: dict) -> bytes:
         """Make observation hashable. Expect obs = {'board': np.ndarray}."""
         board = obs["board"]
-        # Ensure C-contiguous for stable tobytes
         board = np.ascontiguousarray(board)
         return board.tobytes()
 
     def flatten_action(self, a3) -> int:
         a3 = np.asarray(a3, dtype=int)
-        # Use positional arg for the shape
         return int(np.ravel_multi_index(a3, tuple(self.nvec)))
 
     def unflatten_action(self, idx: int):
-        # Use positional arg (or shape=...) — NOT dims=
         return tuple(np.unravel_index(int(idx), tuple(self.nvec)))
-        # equivalently:
-        # return tuple(np.unravel_index(int(idx), shape=tuple(self.nvec)))
 
 
-    # ---- Policy ----
     def get_action(self, obs: dict, info: dict = None):
 
         s = self.encode_obs(obs)
-
-
-
 
         if info is not None and "action_mask" in info:
             mask = info["action_mask"]
             valid_indices = np.where(mask == 1)[0]
 
-            # 🚨 If no valid actions, fall back to all actions
             if len(valid_indices) == 0:
-                valid_indices = np.arange(len(self.q_values[s]))
+                valid_indices = np.arange(self.num_actions)
         else:
-            valid_indices = np.arange(len(self.q_values[s]))
-
-
-
-
-
-
-
-
+            valid_indices = np.arange(self.num_actions)
 
 
         if np.random.random() < self.epsilon:
@@ -89,10 +68,9 @@ class MarbleGameAgent:
             q_vals = self.q_values[s]
             flat_action = valid_indices[np.argmax(q_vals[valid_indices])]
 
-        return np.array(self.unflatten_action(flat_action), dtype=int)
+        return np.array(self.unflatten_action(int(flat_action)), dtype=int)
 
 
-    # ---- Learning ----
     def update(
         self,
         obs: dict,
@@ -105,13 +83,12 @@ class MarbleGameAgent:
         s_next = self.encode_obs(next_obs)
         a_flat = self.flatten_action(action)
 
-        # Max over next-state actions unless terminated
         future_q = 0.0 if terminated else float(np.max(self.q_values[s_next]))
         target = reward + self.discount_factor * future_q
 
         td = target - self.q_values[s][a_flat]
         self.q_values[s][a_flat] += self.lr * td
-        self.training_error.append(td)
+        self.training_error.append(float(td))
 
 
     def save(self, path: str):
@@ -135,17 +112,15 @@ class MarbleGameAgent:
         with open(path, "rb") as f:
             data = pickle.load(f)
 
-        # Create a fresh agent with same params
         agent = cls(
             env=env,
             learning_rate=data["lr"],
-            initial_epsilon=data["epsilon"],  # resume from last epsilon
+            initial_epsilon=data["epsilon"], 
             epsilon_decay=data["epsilon_decay"],
             final_epsilon=data["final_epsilon"],
             discount_factor=data["discount_factor"],
         )
 
-        # Restore learned Q-values
         agent.q_values = defaultdict(
             lambda: np.zeros(agent.num_actions, dtype=np.float32),
             data["q_values"],
